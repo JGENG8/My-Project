@@ -1,0 +1,156 @@
+---
+title: "INFO 550 HW 1"
+author: "Jiaxi Geng"
+date: "9/22/2021"
+output: html_document
+---
+
+## import data set
+```{r setup, include=FALSE}
+# import raw data set
+brinda <- read.csv("/Users/gracegeng/Desktop/BRINDA/new project/brinda12h_psc_jm_Sep2020.csv", header = TRUE)
+# check the size
+dim(brinda)
+```
+Raw data set has 88607 observations and 225 variables.
+
+## Data cleaning
+The inclusion criteria of analysis is sf, crp and agp are not missing. And the imputation process is to substitude zero value of crp and agp with 0.01.
+```{r}
+# exclude observations with missing value in sf, crp and agp, and get a new data set I am going to focusing on
+brindanew <- brinda[!is.na(brinda$sf)&!is.na(brinda$crp)&!is.na(brinda$agp), ]
+# set the category according to each limitation
+brindanew$category <- NA
+brindanew$category[which(brindanew$crp<=5 & brindanew$agp<=1)] <- "Reference"
+brindanew$category[which(brindanew$crp>5 & brindanew$agp<=1)] <- "Incubation"
+brindanew$category[which(brindanew$crp>5 & brindanew$agp>1)] <- "Early convalescence"
+brindanew$category[which(brindanew$crp<=5 & brindanew$agp>1)] <- "Late convalescence"
+# imputation of zero value in crp and agp -- change it to 0.01
+brindanew$crp[which(brindanew$crp==0)]<-0.01
+brindanew$agp[which(brindanew$agp==0)]<-0.01
+dim(brindanew)
+```
+After setting requirements, there there 14068 observations and 225 variables. The new data set is called brindanew.
+
+## do data analysis, get serum ferritin adjusted value with two methods.
+```{r}
+# install the package
+rm(list = ls())
+gc()
+setwd("/Users/gracegeng/Desktop/BRINDA/new project")
+if(!("haven" %in% installed.packages()[,"Package"])) {
+  install.packages("haven", dependencies = TRUE)
+}
+library(haven)
+source(paste0(getwd(), "/BRINDA.R"))
+
+# Method 1 - overall linear model method
+result1 <- BRINDA(dataset = brindanew,
+                         retinol_binding_protein_varname = ,
+                         retinol_varname = ,
+                         ferritin_varname = sf,
+                         soluble_transferrin_receptor_varname = , 
+                         zinc_varname =,
+                         crp_varname = crp, 
+                         agp_varname = agp,
+                         population = WRA, 
+                         crp_ref_value_manual = , 
+                         agp_ref_value_manual = , 
+                         output_format = simple)
+# Method 2 - linear model method for each category
+brindanew1 <- brindanew[which(brindanew$category=="Reference"),]
+brindanew2 <- brindanew[which(brindanew$category=="Incubation"),]
+brindanew3 <- brindanew[which(brindanew$category=="Early convalescence"),]
+brindanew4 <- brindanew[which(brindanew$category=="Late convalescence"),]
+result2_1 <- BRINDA(dataset = brindanew1,
+                         retinol_binding_protein_varname = ,
+                         retinol_varname = ,
+                         ferritin_varname = sf,
+                         soluble_transferrin_receptor_varname = , 
+                         zinc_varname =,
+                         crp_varname = crp, 
+                         agp_varname = agp,
+                         population = WRA, 
+                         crp_ref_value_manual = , 
+                         agp_ref_value_manual = , 
+                         output_format = simple)
+result2_2 <- BRINDA(dataset = brindanew2,
+                           retinol_binding_protein_varname = ,
+                           retinol_varname = ,
+                           ferritin_varname = sf,
+                           soluble_transferrin_receptor_varname = , 
+                           zinc_varname =,
+                           crp_varname = crp, 
+                           agp_varname = agp,
+                           population = WRA, 
+                           crp_ref_value_manual = , 
+                           agp_ref_value_manual = , 
+                           output_format = simple)
+result2_3 <- BRINDA(dataset = brindanew3,
+                           retinol_binding_protein_varname = ,
+                           retinol_varname = ,
+                           ferritin_varname = sf,
+                           soluble_transferrin_receptor_varname = , 
+                           zinc_varname =,
+                           crp_varname = crp, 
+                           agp_varname = agp,
+                           population = WRA, 
+                           crp_ref_value_manual = , 
+                           agp_ref_value_manual = , 
+                           output_format = simple)
+result2_4 <- BRINDA(dataset = brindanew4,
+                           retinol_binding_protein_varname = ,
+                           retinol_varname = ,
+                           ferritin_varname = sf,
+                           soluble_transferrin_receptor_varname = , 
+                           zinc_varname =,
+                           crp_varname = crp, 
+                           agp_varname = agp,
+                           population = WRA, 
+                           crp_ref_value_manual = , 
+                           agp_ref_value_manual = , 
+                           output_format = simple)
+result2 <- rbind(result2_1,result2_2,result2_3,result2_4)
+```
+In result data set, sf_adj is the aiming variable that I want to compare.
+
+## Summary tables
+Compare the mean sf_adj value for overall data and for each category.
+```{r}
+library(psych)
+library(dplyr)
+mean(result1$sf_adj)
+result1 %>%
+  group_by(category) %>%
+  summarise_at(vars(sf_adj), list(name = mean))
+mean(result2$sf_adj)
+result2 %>%
+  group_by(category) %>%
+  summarise_at(vars(sf_adj), list(name = mean))
+```
+
+## Including plots
+Generating boxplot and histogram for each category when comparing between different methods.
+```{r pressure, echo=FALSE}
+par(mfrow=c(2,2))
+boxplot(result1$sf_adj[which(result1$category=="Reference")],main="sf-Method1", xlab="Reference",ylab="Serum ferritin",ylim=c(0,50))
+boxplot(result2$sf_adj[which(result2$category=="Reference")],main="sf-Method2", xlab="Reference",ylab="Serum ferritin",ylim=c(0,50))
+hist(result1$sf_adj[which(result1$category == "Reference")], prob=TRUE, xlab="Serum ferritin", main="sf-Method1",xlim=c(0,150))
+hist(result2$sf_adj[which(result2$category == "Reference")], prob=TRUE, xlab="Serum ferritin", main="sf-Method2",xlim=c(0,150))
+
+boxplot(result1$sf_adj[which(result1$category=="Incubation")],main="sf-Method1", xlab="Incubation",ylab="Serum ferritin",ylim=c(0,50))
+boxplot(result2$sf_adj[which(result2$category=="Incubation")],main="sf-Method2", xlab="Incubation",ylab="Serum ferritin",ylim=c(0,50))
+hist(result1$sf_adj[which(result1$category == "Incubation")], prob=TRUE, xlab="Serum ferritin", main="sf-Method1",xlim=c(0,150))
+hist(result2$sf_adj[which(result2$category == "Incubation")], prob=TRUE, xlab="Serum ferritin", main="sf-Method2",xlim=c(0,150))
+
+boxplot(result1$sf_adj[which(result1$category=="Early convalescence")],main="sf-Method1", xlab="Early convalescence",ylab="Serum ferritin",ylim=c(0,50))
+boxplot(result2$sf_adj[which(result2$category=="Early convalescence")],main="sf-Method2", xlab="Early convalescence",ylab="Serum ferritin",ylim=c(0,50))
+hist(result1$sf_adj[which(result1$category == "Early convalescence")], prob=TRUE, xlab="Serum ferritin", main="sf-Method1",xlim=c(0,150))
+hist(result2$sf_adj[which(result2$category == "Early convalescence")], prob=TRUE, xlab="Serum ferritin", main="sf-Method2",xlim=c(0,150))
+
+boxplot(result1$sf_adj[which(result1$category=="Late convalescence")],main="sf-Method1", xlab="Late convalescence",ylab="Serum ferritin",ylim=c(0,50))
+boxplot(result2$sf_adj[which(result2$category=="Late convalescence")],main="sf-Method2", xlab="Late convalescence",ylab="Serum ferritin",ylim=c(0,50))
+hist(result1$sf_adj[which(result1$category == "Late convalescence")], prob=TRUE, xlab="Serum ferritin", main="sf-Method1",xlim=c(0,150))
+hist(result2$sf_adj[which(result2$category == "Late convalescence")], prob=TRUE, xlab="Serum ferritin", main="sf-Method2",xlim=c(0,150))
+```
+From the summary information and plots I can draw conclusion that only the Late Convalescence Group has similar results in serum ferritin adjusted values when applying method 1 and method 2 separately, all other groups have very different results. I will try with other methods in the future to see if more accurate and reliable adjusted value can be generated.
