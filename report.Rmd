@@ -8,7 +8,9 @@ output: html_document
 ## import data set
 ```{r setup, include=FALSE}
 # import raw data set
-brinda <- read.csv("...../brinda12h_psc_jm_Sep2020.csv", header = TRUE) # please change the path to your downloaded file path
+getwd()
+#workingDir <- "."
+brinda <- read.csv("brinda12h_psc_jm_Sep2020.csv")
 # check the size
 dim(brinda)
 ```
@@ -37,7 +39,7 @@ After setting requirements, there there 14068 observations and 225 variables. Th
 # install the package
 rm(list = ls())
 gc()
-setwd("...") # please change the path to the path of BRINDA.R document
+setwd() # please change the path to the path of BRINDA.R document
 if(!("haven" %in% installed.packages()[,"Package"])) {
   install.packages("haven", dependencies = TRUE)
 }
