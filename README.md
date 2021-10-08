@@ -1,19 +1,16 @@
 # My project
 
-For my project, I will analyze the `brinda12h_psc_jm_Sep2020` data. Since the raw data set has size greater than 25MB, I uploaded a zip file.
+For my project, I will analyze the `brinda12h_psc_jm_Sep2020` data.
 
-To analyze the data you will need to install some `R` packages. The required packages can be installed using `R` commands. There is a package called "BRINDA.R" needing to be downloaded first, this package can only be loaded by reading in.
+To analyze the data you will need to install some `R` packages. The required packages can be installed using `R` commands. There is a package called "BRINDA.R" needed to be downloaded first, so please download all files under this repository.
 
 ``` r
-rm(list = ls())
-gc()
-setwd("...") # Please change the path to BRINDA.R file path
+getwd()
 if(!("haven" %in% installed.packages()[,"Package"])) {
   install.packages("haven", dependencies = TRUE)
 }
 library(haven)
 source(paste0(getwd(), "/BRINDA.R"))
-
 
 ```
 
